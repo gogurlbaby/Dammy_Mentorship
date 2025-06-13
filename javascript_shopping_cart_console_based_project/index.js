@@ -54,18 +54,17 @@ const products = [
 ];
 
 // Initialize cart
-let cart = [];
+const cart = [];
 // Saving of cart data loaded upon mount
-loadCart();
+retrieveCartFromLocalstorage();
 
 export function addToCart(productId, quantity) {
-  // Check if product exists
+  // Check if product exists.
+  // productId is the id provided by the user
   const foundProduct = products.find((product) => product.id === productId);
 
-  if (foundProduct) {
-    console.log(`Product Found: ${foundProduct.name}`);
-  } else {
-    console.log(`Error: Product with ID ${productId} not found`);
+  if (!foundProduct) {
+    console.log(`Error: Product with ID ${productId} not found in catalog.`);
     return;
   }
 
@@ -84,10 +83,11 @@ export function addToCart(productId, quantity) {
     const desiredTotalQuantity = existingCartItem.quantity + quantity;
     if (desiredTotalQuantity > foundProduct.stock) {
       console.log("Error: Cannot add more, desired total exceeds stock!");
+      // To end going through the rest of the code in the function.
       return;
     }
-    // existingCartItem.quantity = existingCartItem.quantity + quantity;.
-    existingCartItem.quantity += quantity;
+    // existingCartItem.quantity = existingCartItem.quantity = quantity;.
+    existingCartItem.quantity = quantity;
     // Add quantity
   } else {
     // Check to not allow adding more than available stock.
@@ -112,63 +112,37 @@ export function addToCart(productId, quantity) {
 
 // Remove item from cart
 export function removeFromCart(productId) {
-  // Initial cart length
-  const inititalCartLength = cart.length;
-
-  const updatedCart = cart.filter(
-    (cartItem) => cartItem.productId !== productId
-  );
-  // Updates the global cart
-  cart = updatedCart;
-
-  if (cart.length < inititalCartLength) {
-    console.log(`Product with ID ${productId} has been removed from the cart.`);
-  } else {
-    console.log(`Error: Product ${productId} was not found in the cart.`);
-  }
-  console.log("Current cart:", cart);
-  saveCart();
-}
-
-// Update item quantity
-export function updateQuantity(productId, newQuantity) {
-  const itemToUpdate = cart.find(
+  // Check if product exists before using filter to remove.
+  const itemToRemove = cart.find(
     (cartItem) => cartItem.productId === productId
   );
 
-  // To check if product exists and also to access foundProduct
-  const foundProduct = products.find((product) => product.id === productId);
-  if (!foundProduct) {
-    console.log(
-      `Error: Product with ID ${productId} not found in product catalog.`
-    );
+  if (!itemToRemove) {
+    console.log(`Error: Product with ID ${productId} was not found in cart.`);
     return;
   }
 
-  if (itemToUpdate) {
-    // Logic to check if item is 0 or negative.
-    if (newQuantity <= 0) {
-      // If quantity is 0 or less, remove the item.
-      console.log(
-        `Quantity for ${itemToUpdate.name} is 0 or less. Removing item from cart.`
-      );
-      removeFromCart(productId);
-      // Only update the quantity if it's a positive number
-    } else {
-      // Check to not allow adding more than available stock.
-      if (newQuantity > foundProduct.stock) {
-        console.log("Error: Not enough stock for desired quantity!");
-        return;
-      }
-      itemToUpdate.quantity = newQuantity;
-      console.log(
-        `Product ${itemToUpdate.name} quantity updated to ${newQuantity}.`
-      );
-    }
-  } else {
-    console.log(`Error: Product with ID ${productId} was not found`);
-    return;
-  }
+  // Filter out a particular product id to be removed.
+  const filteredCartItems = cart.filter(
+    (cartItem) => cartItem.productId !== productId
+  );
+
+  // Now, modify the *existing* 'cart' array in place:
+  // Clear all current elements from the 'cart' array.
+  cart.length = 0;
+
+  // Add all elements from the 'filteredCartItems' array into the now-empty 'cart' array.
+  // The line cart.push(...filteredCartItems); means:
+  // Take every single item out of the filteredCartItems basket, and one by one, put them into the end of your main cart basket.
+  // cart.push() normally adds one item at a time.
+  // The ... (called the "spread operator") next to filteredCartItems is like saying, "Don't add the whole filteredCartItems basket as a single item. Instead, spread out its contents and add each item individually."
+  // So, if filteredCartItems contains [apple, banana, orange], cart.push(...filteredCartItems) becomes like doing cart.push(apple, banana, orange). This effectively moves all the contents from the temporary basket into your main cart.
+  cart.push(...filteredCartItems);
+
+  console.log(
+    `Product ${itemToRemove.name} with ID ${productId} has been removed from the cart.`
+  );
+
   console.log("Current cart:", cart);
   saveCart();
 }
@@ -187,7 +161,9 @@ export function getTotal() {
 }
 
 export function clearCart() {
-  cart = [];
+  // Clear all elements from the existing 'cart' array in place.
+  // This is the correct way to empty a const array without reassigning it
+  cart.length = 0;
   console.log("Cart cleared");
   console.log("Current cart:", cart);
   saveCart();
@@ -204,13 +180,23 @@ function saveCart() {
 }
 
 // Helper function to load the cart to localStorage
-function loadCart() {
+// Use well descriptive variable and function names.
+// Eg. loadCart can be retrieveCartFromLocalstorage or loadCartFromLocalstorage
+function retrieveCartFromLocalstorage() {
   // Get the cart data string from localStorage using the same key
   const cartString = localStorage.getItem("shoppingCart");
 
   if (cartString) {
-    // If data exists, parse the JSON string back into a JavaScript array/object
-    cart = JSON.parse(cartString);
+    // If data exists, Parse the string into a temporary array
+    const retrieveCart = JSON.parse(cartString);
+
+    // To update the 'const cart' array, we can't reassign it.
+    // Instead, we first clear its current contents:
+    cart.length = 0;
+    // Then, we add all items from the retrieveCart into the existing 'cart' array.
+    // The spread operator unpacks etrieveCart's elements into push()
+    cart.push(...retrieveCart);
+
     console.log("Cart loaded from localStorage");
     // If no data in localStorage, initialize cart as empty
   } else {
