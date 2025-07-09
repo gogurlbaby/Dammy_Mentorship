@@ -69,5 +69,5 @@ Saving Data to localStorage (The Persistence Magic!): This was probably the most
 I learned that localStorage only stores text, so I had to use JSON.stringify() to turn my JavaScript cart array (which has objects in it) into a string before saving it. Then, when loading, JSON.parse() brings it back to life as a usable array!
 Identifying every single place the cart could change (addToCart, removeFromCart, updateQuantity, clearCart) and remembering to call a saveCart() function there was critical.
 
-And finally, calling loadCart() right when the script starts up was the key to bringing back the cart from previous sessions.
+And finally, calling retrieveCartFromLocalstorage() right when the script starts up was the key to bringing back the cart from previous sessions.
 This whole project was a fantastic way to put a lot of JavaScript concepts into practice and build something that feels pretty real!
